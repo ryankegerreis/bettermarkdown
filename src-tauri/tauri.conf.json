@@ -28,6 +28,21 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "A fast, disk-first markdown editor",
+    "longDescription": "A fast, disk-first markdown editor with Obsidian-style live preview.",
+    "createUpdaterArtifacts": true,
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown"],
+        "name": "Markdown document",
+        "description": "Markdown document",
+        "role": "Editor",
+        "rank": "Default",
+        "mimeType": "text/markdown",
+        "contentTypes": ["net.daringfireball.markdown"]
+      }
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -35,5 +50,16 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU4RDhDN0Q4OUJBN0FCNzkKUldSNXE2ZWIyTWZZV05zVytkT3ZiT0FVM29kdjA1VEgrVHY4NnJKN2xlSTZVMnhUakJ4aDNiWHQK",
+      "endpoints": [
+        "https://github.com/ryankegerreis/bettermarkdown/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
   }
 }

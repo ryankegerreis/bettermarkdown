@@ -34,6 +34,9 @@ cargo fmt --manifest-path src-tauri/Cargo.toml --check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 ```
 
+Release builds and signing prerequisites are documented in
+[docs/RELEASING.md](./docs/RELEASING.md).
+
 ## Recommended IDE setup
 
 [VS Code](https://code.visualstudio.com/) +

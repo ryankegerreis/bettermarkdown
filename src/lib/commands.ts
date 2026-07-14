@@ -8,6 +8,7 @@ import {
   Italic,
   Link,
   Printer,
+  RefreshCw,
   Save,
   SaveAll,
   Search,
@@ -124,6 +125,12 @@ export const commandDefinitions: CommandDefinition[] = [
     keys: "⌘K",
     icon: Link,
     requiresEditor: true,
+  },
+  {
+    id: "app.checkUpdates",
+    title: "Check for updates…",
+    section: "View",
+    icon: RefreshCw,
   },
   {
     id: "view.settings",

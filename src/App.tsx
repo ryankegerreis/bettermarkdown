@@ -17,6 +17,7 @@ import { useSettings } from "@/store/settings";
 import { registerShortcuts } from "@/lib/shortcuts";
 import { commandDefinitions, type AppCommand } from "@/lib/commands";
 import { cn } from "@/lib/utils";
+import type { AppUpdate } from "@/lib/updates";
 import {
   basename,
   initialFile,
@@ -36,6 +37,7 @@ interface AppApi {
   newFile: () => Promise<void>;
   save: () => Promise<boolean>;
   saveAs: () => Promise<boolean>;
+  checkForUpdates: (silent?: boolean) => Promise<void>;
   handleExternalChange: () => Promise<void>;
   runGuarded: (proceed: () => void) => void;
 }
@@ -199,6 +201,42 @@ function App() {
     }
   }
 
+  async function installUpdate(update: AppUpdate): Promise<void> {
+    const toastId = toast.loading(
+      `Downloading bettermarkdown ${update.version}…`,
+    );
+    try {
+      const { installAppUpdate } = await import("@/lib/updates");
+      await installAppUpdate(update);
+    } catch (error) {
+      toast.error(`Update failed: ${String(error)}`, { id: toastId });
+    }
+  }
+
+  async function checkForUpdates(silent = false): Promise<void> {
+    try {
+      const { checkForAppUpdate } = await import("@/lib/updates");
+      const update = await checkForAppUpdate();
+      if (!update) {
+        if (!silent) toast.success("bettermarkdown is up to date");
+        return;
+      }
+      toast.info(`bettermarkdown ${update.version} is available`, {
+        description: update.body || "Download the update and restart the app.",
+        duration: Infinity,
+        action: {
+          label: "Update & restart",
+          onClick: () =>
+            runGuarded(() => {
+              void installUpdate(update);
+            }),
+        },
+      });
+    } catch (error) {
+      if (!silent) toast.error(`Could not check for updates: ${String(error)}`);
+    }
+  }
+
   // --- Editor change / autosave -------------------------------------------
 
   function scheduleAutosave() {
@@ -259,6 +297,7 @@ function App() {
       newFile,
       save,
       saveAs,
+      checkForUpdates,
       handleExternalChange,
       runGuarded,
     };
@@ -283,6 +322,9 @@ function App() {
         break;
       case "file.print":
         void printPdf();
+        break;
+      case "app.checkUpdates":
+        void checkForUpdates();
         break;
       case "edit.search":
         editorRef.current?.openSearch();
@@ -326,6 +368,9 @@ function App() {
       await useSettings.getState().hydrate();
       const launch = await initialFile();
       if (!cancelled && launch) await apiRef.current?.openPath(launch);
+      if (!cancelled && import.meta.env.PROD) {
+        void apiRef.current?.checkForUpdates(true);
+      }
     })();
     return () => {
       cancelled = true;
