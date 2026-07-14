@@ -1,22 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { getCurrentWindow, type Theme } from "@tauri-apps/api/window";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { toast } from "sonner";
 
-import { Editor, type EditorHandle, type EditorStatus } from "@/editor/Editor";
+import type {
+  EditorHandle,
+  EditorSnapshot,
+  EditorStatus,
+} from "@/editor/Editor";
 import { Toolbar } from "@/components/Toolbar";
 import { EmptyState } from "@/components/EmptyState";
 import { ExternalChangeBar } from "@/components/ExternalChangeBar";
-import { UnsavedChangesDialog } from "@/components/UnsavedChangesDialog";
 import { Toaster } from "@/components/ui/sonner";
-import { CommandPalette } from "@/components/CommandPalette";
-import { SettingsDialog } from "@/components/SettingsDialog";
 import { StatusBar } from "@/components/StatusBar";
 import { useFile } from "@/store/file";
 import { useSettings } from "@/store/settings";
 import { registerShortcuts } from "@/lib/shortcuts";
 import { commandDefinitions, type AppCommand } from "@/lib/commands";
-import { cn } from "@/lib/utils";
 import type { AppUpdate } from "@/lib/updates";
 import {
   basename,
@@ -29,6 +29,25 @@ import {
   unwatchFile,
   watchFile,
 } from "@/lib/files";
+
+const Editor = lazy(() =>
+  import("@/editor/Editor").then((module) => ({ default: module.Editor })),
+);
+const CommandPalette = lazy(() =>
+  import("@/components/CommandPalette").then((module) => ({
+    default: module.CommandPalette,
+  })),
+);
+const SettingsDialog = lazy(() =>
+  import("@/components/SettingsDialog").then((module) => ({
+    default: module.SettingsDialog,
+  })),
+);
+const UnsavedChangesDialog = lazy(() =>
+  import("@/components/UnsavedChangesDialog").then((module) => ({
+    default: module.UnsavedChangesDialog,
+  })),
+);
 
 /** Stable, latest-render view of the actions our one-time listeners call. */
 interface AppApi {
@@ -44,6 +63,8 @@ interface AppApi {
 
 function App() {
   const editorRef = useRef<EditorHandle>(null);
+  /** Latest unopened content while the editor chunk is still loading. */
+  const pendingContentRef = useRef("");
   /** Content that currently matches what's on disk (the dirty baseline). */
   const savedContentRef = useRef<string>("");
   /** Disk content stashed while the reload/keep-mine bar is shown. */
@@ -64,6 +85,7 @@ function App() {
   const [guardOpen, setGuardOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [commandsOpen, setCommandsOpen] = useState(false);
+  const [editorSeed, setEditorSeed] = useState("");
   const [osTheme, setOsTheme] = useState<Theme>(() =>
     window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
@@ -82,19 +104,26 @@ function App() {
   /** Load `content` into the editor and adopt `path` as the buffer identity. */
   function loadBuffer(content: string, bufferPath: string | null) {
     savedContentRef.current = content;
-    editorRef.current?.setContent(content);
+    pendingContentRef.current = content;
+    if (editorRef.current) editorRef.current.setContent(content);
+    else setEditorSeed(content);
     useFile.getState().open(bufferPath);
     editorRef.current?.focus();
   }
 
   async function writeTo(targetPath: string): Promise<boolean> {
-    const content = editorRef.current?.getContent() ?? "";
+    const snapshot: EditorSnapshot | null =
+      editorRef.current?.getSnapshot() ?? null;
+    const content = snapshot?.content ?? pendingContentRef.current;
     try {
       await saveFile(targetPath, content);
       savedContentRef.current = content;
+      pendingContentRef.current = content;
       const store = useFile.getState();
       // Edits typed while the write was in flight must keep the buffer dirty.
-      const stillDirty = (editorRef.current?.getContent() ?? "") !== content;
+      const stillDirty = snapshot
+        ? (editorRef.current?.markSaved(snapshot) ?? false)
+        : false;
       if (store.path !== targetPath) {
         if (store.path) await unwatchFile(store.path).catch(() => {});
         store.open(targetPath);
@@ -260,8 +289,7 @@ function App() {
     }, 2000);
   }
 
-  function handleDocChange(content: string) {
-    const isDirty = content !== savedContentRef.current;
+  function handleDirtyChange(isDirty: boolean) {
     useFile.getState().setDirty(isDirty);
     if (isDirty && useSettings.getState().autosave) scheduleAutosave();
   }
@@ -376,8 +404,10 @@ function App() {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      await useSettings.getState().hydrate();
-      const launch = await initialFile();
+      const [, launch] = await Promise.all([
+        useSettings.getState().hydrate(),
+        initialFile(),
+      ]);
       if (!cancelled && launch) await apiRef.current?.openPath(launch);
       if (!cancelled && import.meta.env.PROD) {
         void apiRef.current?.checkForUpdates(true);
@@ -541,17 +571,20 @@ function App() {
       )}
 
       <div className="relative min-h-0 flex-1">
-        {/* Editor stays mounted (only visually hidden on the empty state) so its
-            imperative handle is ready before the first open/new. */}
-        <div className={cn("absolute inset-0", !active && "invisible")}>
-          <Editor
-            ref={editorRef}
-            filePath={path}
-            onDocChange={handleDocChange}
-            preferences={editorPreferences}
-            onStatusChange={setEditorStatus}
-          />
-        </div>
+        {active && (
+          <div className="absolute inset-0">
+            <Suspense fallback={null}>
+              <Editor
+                ref={editorRef}
+                initialContent={editorSeed}
+                filePath={path}
+                onDirtyChange={handleDirtyChange}
+                preferences={editorPreferences}
+                onStatusChange={setEditorStatus}
+              />
+            </Suspense>
+          </div>
+        )}
         {!active && (
           <div className="absolute inset-0 bg-background">
             <EmptyState
@@ -573,20 +606,32 @@ function App() {
         <StatusBar {...editorStatus} dirty={dirty} autosave={autosave} />
       )}
 
-      <CommandPalette
-        open={commandsOpen}
-        onOpenChange={setCommandsOpen}
-        commands={commands}
-      />
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      {commandsOpen && (
+        <Suspense fallback={null}>
+          <CommandPalette
+            open
+            onOpenChange={setCommandsOpen}
+            commands={commands}
+          />
+        </Suspense>
+      )}
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsDialog open onOpenChange={setSettingsOpen} />
+        </Suspense>
+      )}
 
-      <UnsavedChangesDialog
-        open={guardOpen}
-        fileName={fileName}
-        onSave={() => void guardSave()}
-        onDontSave={guardDontSave}
-        onCancel={guardCancel}
-      />
+      {guardOpen && (
+        <Suspense fallback={null}>
+          <UnsavedChangesDialog
+            open
+            fileName={fileName}
+            onSave={() => void guardSave()}
+            onDontSave={guardDontSave}
+            onCancel={guardCancel}
+          />
+        </Suspense>
+      )}
       <Toaster position="bottom-right" />
     </div>
   );

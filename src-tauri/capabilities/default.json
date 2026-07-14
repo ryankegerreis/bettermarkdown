@@ -15,7 +15,6 @@
     "process:allow-restart",
     "updater:default",
     "dialog:default",
-    "fs:default",
     "store:default"
   ]
 }

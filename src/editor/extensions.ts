@@ -14,7 +14,7 @@ import {
   defaultHighlightStyle,
 } from "@codemirror/language";
 import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
-import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
+import { markdownLanguage } from "@codemirror/lang-markdown";
 import { insertNewlineContinueMarkup } from "@codemirror/lang-markdown";
 
 import { bettermarkdownTheme } from "./theme";
@@ -35,7 +35,7 @@ export function baseExtensions(): Extension[] {
     bracketMatching(),
     highlightSelectionMatches(),
     EditorView.lineWrapping,
-    markdown({ base: markdownLanguage }),
+    markdownLanguage,
     livePreview(),
     // Fallback highlight for embedded/non-markdown tokens; markdown tokens are
     // styled by bettermarkdownTheme's HighlightStyle.

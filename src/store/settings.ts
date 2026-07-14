@@ -20,6 +20,7 @@ export const DEFAULT_EDITOR_PREFERENCES: EditorPreferences = {
 
 /** Lazily-opened handle to `settings.json` in the app config dir. */
 let storePromise: Promise<Store> | null = null;
+let editorPersistTimer: ReturnType<typeof setTimeout> | null = null;
 function getStore(): Promise<Store> {
   if (!storePromise) {
     storePromise = load("settings.json", { autoSave: true, defaults: {} });
@@ -52,13 +53,17 @@ export const useSettings = create<SettingsState>((set, get) => ({
 
   async hydrate() {
     const store = await getStore();
-    const autosave = (await store.get<boolean>("autosave")) ?? false;
-    const theme =
-      (await store.get<ThemePreference>("theme")) ?? ("system" as const);
-    const persistedEditor =
-      await store.get<Partial<EditorPreferences>>("editor");
+    const [storedAutosave, storedTheme, persistedEditor, storedRecentFiles] =
+      await Promise.all([
+        store.get<boolean>("autosave"),
+        store.get<ThemePreference>("theme"),
+        store.get<Partial<EditorPreferences>>("editor"),
+        store.get<string[]>("recentFiles"),
+      ]);
+    const autosave = storedAutosave ?? false;
+    const theme = storedTheme ?? ("system" as const);
     const editor = { ...DEFAULT_EDITOR_PREFERENCES, ...persistedEditor };
-    const recentFiles = (await store.get<string[]>("recentFiles")) ?? [];
+    const recentFiles = storedRecentFiles ?? [];
     set({ autosave, theme, editor, recentFiles, hydrated: true });
   },
 
@@ -77,8 +82,11 @@ export const useSettings = create<SettingsState>((set, get) => ({
   async setEditor(patch) {
     const editor = { ...get().editor, ...patch };
     set({ editor });
-    const store = await getStore();
-    await store.set("editor", editor);
+    if (editorPersistTimer) clearTimeout(editorPersistTimer);
+    editorPersistTimer = setTimeout(() => {
+      editorPersistTimer = null;
+      void getStore().then((store) => store.set("editor", editor));
+    }, 150);
   },
 
   async addRecent(path) {

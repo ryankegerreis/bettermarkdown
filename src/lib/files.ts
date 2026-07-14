@@ -1,8 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import {
-  open as openDialog,
-  save as saveDialog,
-} from "@tauri-apps/plugin-dialog";
 
 /** Extensions offered in the open/save dialogs. */
 const MD_FILTERS = [
@@ -45,7 +41,8 @@ export function initialFile(): Promise<string | null> {
 
 /** Show a native open dialog filtered to markdown; returns the chosen path. */
 export async function pickOpenPath(): Promise<string | null> {
-  const result = await openDialog({
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const result = await open({
     multiple: false,
     directory: false,
     filters: MD_FILTERS,
@@ -54,14 +51,18 @@ export async function pickOpenPath(): Promise<string | null> {
 }
 
 /** Show a native save dialog; returns the chosen path. */
-export function pickSavePath(defaultPath?: string): Promise<string | null> {
-  return saveDialog({ filters: MD_FILTERS, defaultPath });
+export async function pickSavePath(
+  defaultPath?: string,
+): Promise<string | null> {
+  const { save } = await import("@tauri-apps/plugin-dialog");
+  return save({ filters: MD_FILTERS, defaultPath });
 }
 
-export function pickHtmlExportPath(
+export async function pickHtmlExportPath(
   defaultPath: string,
 ): Promise<string | null> {
-  return saveDialog({ filters: HTML_FILTERS, defaultPath });
+  const { save } = await import("@tauri-apps/plugin-dialog");
+  return save({ filters: HTML_FILTERS, defaultPath });
 }
 
 /** Final path segment, handling both `/` and `\` separators. */
