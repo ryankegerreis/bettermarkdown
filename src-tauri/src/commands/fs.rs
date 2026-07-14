@@ -62,11 +62,12 @@ pub async fn save_file(
             let _ = std::fs::set_permissions(target, perms);
         }
 
-        if let Ok(mtime) = std::fs::metadata(target).and_then(|m| m.modified()) {
-            just_saved
-                .lock()
-                .unwrap()
-                .insert(target.to_path_buf(), mtime);
+        // Key by the canonical path: the watcher canonicalizes event paths, so
+        // a raw path (e.g. through the /tmp symlink on macOS) would never match
+        // and every save would bounce back as a spurious external change.
+        let canonical = std::fs::canonicalize(target).unwrap_or_else(|_| target.to_path_buf());
+        if let Ok(mtime) = std::fs::metadata(&canonical).and_then(|m| m.modified()) {
+            just_saved.lock().unwrap().insert(canonical, mtime);
         }
         Ok(())
     })

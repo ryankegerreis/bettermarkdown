@@ -1,4 +1,10 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+} from "react";
 import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 import { openSearchPanel } from "@codemirror/search";
@@ -43,7 +49,10 @@ interface EditorProps {
 }
 
 function wordCount(text: string): number {
-  return text.trim() ? text.trim().split(/\s+/u).length : 0;
+  const words = /\S+/g;
+  let count = 0;
+  while (words.test(text)) count++;
+  return count;
 }
 
 export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
@@ -56,6 +65,8 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
   const appearanceCompartmentRef = useRef(new Compartment());
   const filePathRef = useRef(filePath);
   const preferencesRef = useRef(preferences);
+  /** Word count cached per document version; selection moves reuse it. */
+  const wordsRef = useRef(0);
 
   // Keep the latest callback without recreating the editor.
   const onDocChangeRef = useRef(onDocChange);
@@ -63,20 +74,19 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
   const onStatusChangeRef = useRef(onStatusChange);
   onStatusChangeRef.current = onStatusChange;
 
-  function reportStatus(view: EditorView) {
+  const reportStatus = useCallback((view: EditorView) => {
     const head = view.state.selection.main.head;
     const line = view.state.doc.lineAt(head);
-    const text = view.state.doc.toString();
     onStatusChangeRef.current({
-      words: wordCount(text),
+      words: wordsRef.current,
       characters: view.state.doc.length,
       line: line.number,
       column: head - line.from + 1,
     });
-  }
+  }, []);
 
-  function makeExtensions(listener: Extension): Extension[] {
-    return [
+  const makeExtensions = useCallback(
+    (): Extension[] => [
       ...baseExtensions(),
       filePathCompartmentRef.current.of(
         markdownFilePath.of(filePathRef.current ?? ""),
@@ -84,21 +94,23 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       appearanceCompartmentRef.current.of(
         editorAppearance(preferencesRef.current),
       ),
-      listener,
-    ];
-  }
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          const text = update.state.doc.toString();
+          wordsRef.current = wordCount(text);
+          onDocChangeRef.current(text);
+        }
+        if (update.docChanged || update.selectionSet) reportStatus(update.view);
+      }),
+    ],
+    [reportStatus],
+  );
 
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
 
-    const listener = EditorView.updateListener.of((update) => {
-      if (update.docChanged) {
-        onDocChangeRef.current(update.state.doc.toString());
-      }
-      if (update.docChanged || update.selectionSet) reportStatus(update.view);
-    });
-    const extensions = makeExtensions(listener);
+    const extensions = makeExtensions();
 
     const view = new EditorView({
       state: EditorState.create({ doc: "", extensions }),
@@ -111,7 +123,9 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       view.destroy();
       viewRef.current = null;
     };
-  }, []); // filePath updates through the compartment below.
+    // Both deps are stable useCallbacks; filePath updates through the
+    // compartment below, so the editor is created exactly once.
+  }, [makeExtensions, reportStatus]);
 
   useEffect(() => {
     filePathRef.current = filePath;
@@ -144,18 +158,11 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         if (!view) return;
         // A fresh state (rather than a replace transaction) resets undo history
         // so you can't "undo" across an open/reload boundary.
-        const listener = EditorView.updateListener.of((update) => {
-          if (update.docChanged) {
-            onDocChangeRef.current(update.state.doc.toString());
-          }
-          if (update.docChanged || update.selectionSet)
-            reportStatus(update.view);
-        });
-        const extensions = makeExtensions(listener);
+        wordsRef.current = wordCount(content);
         view.setState(
           EditorState.create({
             doc: content,
-            extensions,
+            extensions: makeExtensions(),
           }),
         );
         reportStatus(view);
@@ -182,7 +189,7 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         if (view) toggleLink(view);
       },
     }),
-    [],
+    [makeExtensions, reportStatus],
   );
 
   return <div ref={hostRef} className="h-full min-h-0 w-full" />;

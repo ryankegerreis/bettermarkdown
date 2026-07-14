@@ -93,13 +93,16 @@ function App() {
       await saveFile(targetPath, content);
       savedContentRef.current = content;
       const store = useFile.getState();
+      // Edits typed while the write was in flight must keep the buffer dirty.
+      const stillDirty = (editorRef.current?.getContent() ?? "") !== content;
       if (store.path !== targetPath) {
         if (store.path) await unwatchFile(store.path).catch(() => {});
         store.open(targetPath);
+        store.setDirty(stillDirty);
         await watchFile(targetPath).catch(() => {});
         await useSettings.getState().addRecent(targetPath);
       } else {
-        store.setDirty(false);
+        store.setDirty(stillDirty);
         store.setExternalChanged(false);
       }
       return true;
@@ -158,6 +161,12 @@ function App() {
     }
     if (disk === savedContentRef.current) return; // No real change / our own save.
     if (store.dirty) {
+      // Park any pending autosave so it can't clobber the on-disk version
+      // while the user decides between reload and keep-mine.
+      if (autosaveTimerRef.current !== null) {
+        window.clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
       externalDiskRef.current = disk;
       store.setExternalChanged(true);
     } else {
@@ -245,7 +254,9 @@ function App() {
     }
     autosaveTimerRef.current = window.setTimeout(() => {
       const s = useFile.getState();
-      if (s.path && s.dirty) void save();
+      // Never autosave over an unresolved external change; the reload bar
+      // decides which version wins.
+      if (s.path && s.dirty && !s.externalChanged) void save();
     }, 2000);
   }
 
@@ -522,7 +533,10 @@ function App() {
             if (p) loadBuffer(externalDiskRef.current, p);
             useFile.getState().setExternalChanged(false);
           }}
-          onKeepMine={() => useFile.getState().setExternalChanged(false)}
+          onKeepMine={() => {
+            useFile.getState().setExternalChanged(false);
+            if (useSettings.getState().autosave) scheduleAutosave();
+          }}
         />
       )}
 

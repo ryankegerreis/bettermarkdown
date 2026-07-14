@@ -72,7 +72,7 @@ export class HorizontalRuleWidget extends WidgetType {
   }
 }
 
-function hasProtocol(value: string): boolean {
+export function hasProtocol(value: string): boolean {
   return /^[a-z][a-z\d+.-]*:/i.test(value);
 }
 

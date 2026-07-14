@@ -3,15 +3,11 @@ import { EditorView, ViewPlugin, type ViewUpdate } from "@codemirror/view";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 
 import { buildDecorations } from "./decorate";
-import { resolveLocalPath } from "./widgets";
+import { hasProtocol, resolveLocalPath } from "./widgets";
 
 export const markdownFilePath = Facet.define<string, string>({
   combine: (values) => values[values.length - 1] ?? "",
 });
-
-function hasProtocol(value: string): boolean {
-  return /^[a-z][a-z\d+.-]*:/i.test(value);
-}
 
 async function openLink(href: string, filePath: string) {
   if (hasProtocol(href) || href.startsWith("//")) {

@@ -122,9 +122,11 @@ export function buildDecorations(
       from: visible.from,
       to: visible.to,
       enter(node) {
-        const revealed = selectionTouches(view.state, node.from, node.to);
+        // Selection checks are done per-branch so the many nodes we never
+        // decorate (paragraphs, text, …) skip them entirely.
+        const revealed = () => selectionTouches(view.state, node.from, node.to);
 
-        if (/^ATXHeading[1-6]$/.test(node.name)) {
+        if (node.name.startsWith("ATXHeading")) {
           const level = node.name[node.name.length - 1];
           addLines(
             view,
@@ -136,7 +138,7 @@ export function buildDecorations(
             visible.to,
           );
           const marker = node.node.getChild("HeaderMark");
-          if (marker && !revealed) {
+          if (marker && !revealed()) {
             const after = view.state.sliceDoc(marker.to, marker.to + 1);
             const to = after === " " ? marker.to + 1 : marker.to;
             ranges.push(Decoration.replace({}).range(marker.from, to));
@@ -167,7 +169,7 @@ export function buildDecorations(
               visible.from,
               visible.to,
             );
-            if (!revealed) {
+            if (!revealed()) {
               for (const marker of nodeChildren(node, "QuoteMark").filter(
                 (candidate) =>
                   candidate.to >= visible.from && candidate.from <= visible.to,
@@ -194,7 +196,7 @@ export function buildDecorations(
               visible.to,
             );
             const marker = node.node.getChild("ListMark");
-            if (marker && !revealed) {
+            if (marker && !revealed()) {
               const value = view.state.sliceDoc(marker.from, marker.to);
               if (/^[-+*]$/.test(value)) {
                 ranges.push(
@@ -219,7 +221,7 @@ export function buildDecorations(
             const task = node.node.parent;
             const taskRevealed = task
               ? selectionTouches(view.state, task.from, task.to)
-              : revealed;
+              : revealed();
             if (!taskRevealed) {
               const checked = /x/i.test(
                 view.state.sliceDoc(node.from, node.to),
@@ -233,7 +235,7 @@ export function buildDecorations(
             return false;
           }
           case "HorizontalRule":
-            if (!revealed) {
+            if (!revealed()) {
               ranges.push(
                 Decoration.replace({
                   widget: new HorizontalRuleWidget(),
