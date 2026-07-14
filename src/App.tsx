@@ -333,7 +333,11 @@ function App() {
         {/* Editor stays mounted (only visually hidden on the empty state) so its
             imperative handle is ready before the first open/new. */}
         <div className={cn("absolute inset-0", !active && "invisible")}>
-          <Editor ref={editorRef} onDocChange={handleDocChange} />
+          <Editor
+            ref={editorRef}
+            filePath={path}
+            onDocChange={handleDocChange}
+          />
         </div>
         {!active && (
           <div className="absolute inset-0 bg-background">

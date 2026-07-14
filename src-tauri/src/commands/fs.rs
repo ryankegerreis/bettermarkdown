@@ -15,8 +15,8 @@ use crate::watcher::WatcherState;
 #[tauri::command]
 pub async fn read_file(path: String) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let bytes =
-            std::fs::read(&path).map_err(|e| format!("Could not read \u{201c}{path}\u{201d}: {e}"))?;
+        let bytes = std::fs::read(&path)
+            .map_err(|e| format!("Could not read \u{201c}{path}\u{201d}: {e}"))?;
         String::from_utf8(bytes)
             .map_err(|_| format!("\u{201c}{path}\u{201d} is not valid UTF-8 text."))
     })

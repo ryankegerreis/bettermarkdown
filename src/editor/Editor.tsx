@@ -1,8 +1,9 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { EditorState, type Extension } from "@codemirror/state";
+import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import { EditorView } from "@codemirror/view";
 
 import { baseExtensions } from "./extensions";
+import { markdownFilePath } from "./livePreview";
 
 /** Imperative handle App uses to read/replace the buffer and move focus. */
 export interface EditorHandle {
@@ -15,15 +16,17 @@ export interface EditorHandle {
 interface EditorProps {
   /** Fires only for user edits (not for programmatic `setContent`). */
   onDocChange: (content: string) => void;
+  filePath: string | null;
 }
 
 export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
-  { onDocChange },
+  { onDocChange, filePath },
   ref,
 ) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const extensionsRef = useRef<Extension[]>([]);
+  const filePathCompartmentRef = useRef(new Compartment());
 
   // Keep the latest callback without recreating the editor.
   const onDocChangeRef = useRef(onDocChange);
@@ -38,7 +41,11 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         onDocChangeRef.current(update.state.doc.toString());
       }
     });
-    const extensions = [...baseExtensions(), listener];
+    const extensions = [
+      ...baseExtensions(),
+      filePathCompartmentRef.current.of(markdownFilePath.of("")),
+      listener,
+    ];
     extensionsRef.current = extensions;
 
     const view = new EditorView({
@@ -51,7 +58,17 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
       view.destroy();
       viewRef.current = null;
     };
-  }, []);
+  }, []); // filePath updates through the compartment below.
+
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!view) return;
+    view.dispatch({
+      effects: filePathCompartmentRef.current.reconfigure(
+        markdownFilePath.of(filePath ?? ""),
+      ),
+    });
+  }, [filePath]);
 
   useImperativeHandle(
     ref,

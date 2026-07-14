@@ -87,7 +87,9 @@ fn handle_events(app: &AppHandle, just_saved: &JustSaved, result: DebounceEventR
             continue;
         }
 
-        let current = std::fs::metadata(&path).ok().and_then(|m| m.modified().ok());
+        let current = std::fs::metadata(&path)
+            .ok()
+            .and_then(|m| m.modified().ok());
         {
             let mut js = just_saved.lock().unwrap();
             if let Some(saved) = js.get(&path).copied() {
