@@ -12,48 +12,48 @@
  * chrome and the editor between light and dark.
  */
 :root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(240 10% 3.9%);
-  --muted: hsl(240 4.8% 95.9%);
-  --muted-foreground: hsl(240 3.8% 46.1%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(240 10% 3.9%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(240 10% 3.9%);
-  --border: hsl(240 5.9% 90%);
-  --input: hsl(240 5.9% 90%);
-  --primary: hsl(240 5.9% 10%);
-  --primary-foreground: hsl(0 0% 98%);
-  --secondary: hsl(240 4.8% 95.9%);
-  --secondary-foreground: hsl(240 5.9% 10%);
-  --accent: hsl(240 4.8% 95.9%);
-  --accent-foreground: hsl(240 5.9% 10%);
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(0 0% 98%);
-  --ring: hsl(240 5.9% 10%);
+  --background: oklch(0.985 0.006 85);
+  --foreground: oklch(0.22 0.012 70);
+  --muted: oklch(0.945 0.009 82);
+  --muted-foreground: oklch(0.51 0.018 72);
+  --popover: oklch(0.99 0.004 85);
+  --popover-foreground: oklch(0.22 0.012 70);
+  --card: oklch(0.99 0.004 85);
+  --card-foreground: oklch(0.22 0.012 70);
+  --border: oklch(0.885 0.012 78);
+  --input: oklch(0.885 0.012 78);
+  --primary: oklch(0.43 0.075 62);
+  --primary-foreground: oklch(0.985 0.006 85);
+  --secondary: oklch(0.945 0.009 82);
+  --secondary-foreground: oklch(0.27 0.014 70);
+  --accent: oklch(0.93 0.015 75);
+  --accent-foreground: oklch(0.27 0.014 70);
+  --destructive: oklch(0.58 0.19 28);
+  --destructive-foreground: oklch(0.985 0.006 85);
+  --ring: oklch(0.43 0.075 62);
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: hsl(240 10% 3.9%);
-  --foreground: hsl(0 0% 98%);
-  --muted: hsl(240 3.7% 15.9%);
-  --muted-foreground: hsl(240 5% 64.9%);
-  --popover: hsl(240 10% 3.9%);
-  --popover-foreground: hsl(0 0% 98%);
-  --card: hsl(240 10% 3.9%);
-  --card-foreground: hsl(0 0% 98%);
-  --border: hsl(240 3.7% 15.9%);
-  --input: hsl(240 3.7% 15.9%);
-  --primary: hsl(0 0% 98%);
-  --primary-foreground: hsl(240 5.9% 10%);
-  --secondary: hsl(240 3.7% 15.9%);
-  --secondary-foreground: hsl(0 0% 98%);
-  --accent: hsl(240 3.7% 15.9%);
-  --accent-foreground: hsl(0 0% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
-  --destructive-foreground: hsl(0 0% 98%);
-  --ring: hsl(240 4.9% 83.9%);
+  --background: oklch(0.185 0.008 75);
+  --foreground: oklch(0.92 0.009 82);
+  --muted: oklch(0.255 0.011 75);
+  --muted-foreground: oklch(0.69 0.016 78);
+  --popover: oklch(0.22 0.009 75);
+  --popover-foreground: oklch(0.92 0.009 82);
+  --card: oklch(0.22 0.009 75);
+  --card-foreground: oklch(0.92 0.009 82);
+  --border: oklch(0.315 0.013 75);
+  --input: oklch(0.315 0.013 75);
+  --primary: oklch(0.72 0.08 70);
+  --primary-foreground: oklch(0.19 0.008 75);
+  --secondary: oklch(0.27 0.011 75);
+  --secondary-foreground: oklch(0.92 0.009 82);
+  --accent: oklch(0.29 0.018 70);
+  --accent-foreground: oklch(0.92 0.009 82);
+  --destructive: oklch(0.62 0.18 28);
+  --destructive-foreground: oklch(0.96 0.005 80);
+  --ring: oklch(0.72 0.08 70);
 }
 
 @theme inline {
@@ -102,5 +102,153 @@
       "Segoe UI",
       sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .settings-range {
+    width: 100%;
+    accent-color: var(--primary);
+  }
+
+  .command-group [cmdk-group-heading] {
+    padding: 0.5rem 0.65rem 0.25rem;
+    color: var(--muted-foreground);
+    font-size: 0.65rem;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .command-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 2.35rem;
+    border-radius: calc(var(--radius) - 2px);
+    padding: 0.45rem 0.65rem;
+    color: var(--foreground);
+    font-size: 0.875rem;
+    outline: none;
+    cursor: default;
+  }
+
+  .command-item[data-selected="true"] {
+    background: var(--accent);
+  }
+
+  .command-item[data-disabled="true"] {
+    opacity: 0.38;
+  }
+
+  .command-item kbd {
+    color: var(--muted-foreground);
+    font-size: 0.7rem;
+  }
+}
+
+.bm-print-view {
+  display: none;
+}
+
+@media print {
+  body > #root {
+    display: none !important;
+  }
+
+  .bm-print-view {
+    display: block;
+    color: #292824;
+    background: white;
+    font:
+      12pt/1.58 ui-serif,
+      Charter,
+      "Bitstream Charter",
+      Cambria,
+      serif;
+  }
+
+  .bm-print-view article {
+    width: auto;
+    margin: 0;
+  }
+
+  .bm-print-view h1,
+  .bm-print-view h2,
+  .bm-print-view h3,
+  .bm-print-view h4,
+  .bm-print-view h5,
+  .bm-print-view h6 {
+    break-after: avoid;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.22;
+    letter-spacing: -0.025em;
+    margin: 1.5em 0 0.5em;
+  }
+
+  .bm-print-view h1 {
+    font-size: 24pt;
+  }
+
+  .bm-print-view h2 {
+    font-size: 19pt;
+  }
+
+  .bm-print-view h3 {
+    font-size: 15pt;
+  }
+
+  .bm-print-view pre,
+  .bm-print-view blockquote,
+  .bm-print-view table,
+  .bm-print-view img {
+    break-inside: avoid;
+  }
+
+  .bm-print-view code,
+  .bm-print-view pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #eeece6;
+  }
+
+  .bm-print-view code {
+    border-radius: 3px;
+    padding: 0.1em 0.28em;
+    font-size: 0.9em;
+  }
+
+  .bm-print-view pre {
+    overflow: hidden;
+    border-radius: 5px;
+    padding: 0.9rem 1rem;
+  }
+
+  .bm-print-view pre code {
+    padding: 0;
+    background: transparent;
+  }
+
+  .bm-print-view blockquote {
+    margin: 1.4em 0;
+    padding-inline-start: 1em;
+    border-inline-start: 1px solid #dedbd2;
+    color: #706d65;
+  }
+
+  .bm-print-view img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .bm-print-view table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .bm-print-view th,
+  .bm-print-view td {
+    padding: 0.45em 0.6em;
+    border-bottom: 1px solid #dedbd2;
+    text-align: start;
   }
 }

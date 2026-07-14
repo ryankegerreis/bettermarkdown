@@ -1,4 +1,4 @@
-import { FilePlus2, FolderOpen, Save } from "lucide-react";
+import { Command, FilePlus2, FolderOpen, Save, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,8 @@ interface ToolbarProps {
   onOpen: () => void;
   onSave: () => void;
   onToggleAutosave: () => void;
+  onOpenCommands: () => void;
+  onOpenSettings: () => void;
 }
 
 /** Slim header with the file name, dirty indicator, and core file actions. */
@@ -21,6 +23,8 @@ export function Toolbar({
   onOpen,
   onSave,
   onToggleAutosave,
+  onOpenCommands,
+  onOpenSettings,
 }: ToolbarProps) {
   return (
     <header className="flex h-10 shrink-0 items-center gap-2 border-b border-border px-2">
@@ -59,6 +63,22 @@ export function Toolbar({
       >
         Autosave {autosave ? "on" : "off"}
       </button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={onOpenCommands}
+        title="Commands (⌘⇧P)"
+      >
+        <Command className="size-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={onOpenSettings}
+        title="Settings (⌘,)"
+      >
+        <Settings className="size-3.5" />
+      </Button>
     </header>
   );
 }

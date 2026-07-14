@@ -2,6 +2,22 @@ import { EditorView } from "@codemirror/view";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { tags as t } from "@lezer/highlight";
 import type { Extension } from "@codemirror/state";
+import type { EditorPreferences } from "@/store/settings";
+
+const editorFonts: Record<EditorPreferences["fontFamily"], string> = {
+  sans: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  serif: "ui-serif, Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif",
+  mono: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace",
+};
+
+/** Live-reconfigurable reader preferences, installed in a CM compartment. */
+export function editorAppearance(preferences: EditorPreferences): Extension {
+  return EditorView.theme({
+    "&": { fontSize: `${preferences.fontSize}px` },
+    ".cm-scroller": { fontFamily: editorFonts[preferences.fontFamily] },
+    ".cm-content": { maxWidth: `${preferences.lineWidth}ch` },
+  });
+}
 
 /**
  * Editor chrome. All colors are the same CSS variables the Tailwind theme uses
@@ -13,11 +29,11 @@ const editorTheme = EditorView.theme({
     height: "100%",
     color: "var(--foreground)",
     backgroundColor: "var(--background)",
-    fontSize: "15px",
+    fontSize: "16px",
   },
   ".cm-scroller": {
     fontFamily:
-      "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace",
+      "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
     lineHeight: "1.7",
   },
   ".cm-content": {
@@ -221,6 +237,38 @@ const editorTheme = EditorView.theme({
     color: "var(--foreground)",
     border: "1px solid var(--border)",
     borderRadius: "var(--radius-sm)",
+    fontFamily: "inherit",
+    fontSize: "0.8rem",
+    outline: "none",
+    padding: "0.3rem 0.45rem",
+  },
+  ".cm-panel.cm-search": {
+    alignItems: "center",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "0.35rem",
+    padding: "0.45rem 0.6rem",
+  },
+  ".cm-panel.cm-search button": {
+    backgroundColor: "var(--secondary)",
+    backgroundImage: "none",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius-sm)",
+    color: "var(--secondary-foreground)",
+    fontFamily: "inherit",
+    fontSize: "0.72rem",
+    padding: "0.28rem 0.5rem",
+  },
+  ".cm-panel.cm-search button:hover": {
+    backgroundColor: "var(--accent)",
+  },
+  ".cm-panel.cm-search label": {
+    color: "var(--muted-foreground)",
+    fontSize: "0.72rem",
+  },
+  ".cm-panel.cm-search .cm-button[name=close]": {
+    border: "0",
+    marginLeft: "auto",
   },
 });
 

@@ -20,6 +20,15 @@ fn initial_file() -> Option<String> {
     file_from_args(std::env::args().collect::<Vec<_>>())
 }
 
+/// Open the platform print dialog for the current webview. The frontend mounts
+/// a print-only document immediately before invoking this command.
+#[tauri::command]
+fn print_window(window: tauri::WebviewWindow) -> Result<(), String> {
+    window
+        .print()
+        .map_err(|error| format!("Could not open the print dialog: {error}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -44,6 +53,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             initial_file,
+            print_window,
             commands::fs::read_file,
             commands::fs::save_file,
             commands::fs::file_metadata,

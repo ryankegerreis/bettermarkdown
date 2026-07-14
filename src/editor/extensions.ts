@@ -19,12 +19,6 @@ import { insertNewlineContinueMarkup } from "@codemirror/lang-markdown";
 
 import { bettermarkdownTheme } from "./theme";
 import { livePreview } from "./livePreview";
-import {
-  toggleBold,
-  toggleInlineCode,
-  toggleItalic,
-  toggleLink,
-} from "./livePreview/commands";
 
 /**
  * Base extensions for the editor. `markdownLanguage`
@@ -48,13 +42,9 @@ export function baseExtensions(): Extension[] {
     syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
     keymap.of([
       { key: "Enter", run: insertNewlineContinueMarkup },
-      { key: "Mod-b", run: toggleBold },
-      { key: "Mod-i", run: toggleItalic },
-      { key: "Mod-e", run: toggleInlineCode },
-      { key: "Mod-k", run: toggleLink },
       ...defaultKeymap,
       ...historyKeymap,
-      ...searchKeymap,
+      ...searchKeymap.filter((binding) => binding.key !== "Mod-f"),
     ]),
     bettermarkdownTheme,
   ];

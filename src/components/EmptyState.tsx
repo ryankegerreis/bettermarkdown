@@ -1,4 +1,4 @@
-import { FilePlus2, FolderOpen, X } from "lucide-react";
+import { Command, FilePlus2, FolderOpen, Settings, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { basename } from "@/lib/files";
 
@@ -8,6 +8,8 @@ interface EmptyStateProps {
   onOpen: () => void;
   onOpenRecent: (path: string) => void;
   onRemoveRecent: (path: string) => void;
+  onOpenCommands: () => void;
+  onOpenSettings: () => void;
 }
 
 /** Landing screen shown when no buffer is open. */
@@ -17,9 +19,29 @@ export function EmptyState({
   onOpen,
   onOpenRecent,
   onRemoveRecent,
+  onOpenCommands,
+  onOpenSettings,
 }: EmptyStateProps) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-8 px-6">
+    <div className="relative flex h-full flex-col items-center justify-center gap-8 px-6">
+      <div className="absolute top-3 right-3 flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={onOpenCommands}
+          title="Commands (⌘⇧P)"
+        >
+          <Command className="size-3.5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={onOpenSettings}
+          title="Settings (⌘,)"
+        >
+          <Settings className="size-3.5" />
+        </Button>
+      </div>
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">
           bettermarkdown
@@ -73,6 +95,10 @@ export function EmptyState({
           </ul>
         </div>
       )}
+      <p className="absolute bottom-5 text-[11px] text-muted-foreground">
+        Press <kbd className="rounded border px-1.5 py-0.5">⌘⇧P</kbd> for all
+        commands
+      </p>
     </div>
   );
 }

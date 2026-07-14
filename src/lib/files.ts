@@ -8,6 +8,7 @@ import {
 const MD_FILTERS = [
   { name: "Markdown", extensions: ["md", "markdown", "txt"] },
 ];
+const HTML_FILTERS = [{ name: "HTML document", extensions: ["html"] }];
 
 /** Read a file as UTF-8 text (rejects non-UTF-8 with an error). */
 export function readFile(path: string): Promise<string> {
@@ -55,6 +56,12 @@ export async function pickOpenPath(): Promise<string | null> {
 /** Show a native save dialog; returns the chosen path. */
 export function pickSavePath(defaultPath?: string): Promise<string | null> {
   return saveDialog({ filters: MD_FILTERS, defaultPath });
+}
+
+export function pickHtmlExportPath(
+  defaultPath: string,
+): Promise<string | null> {
+  return saveDialog({ filters: HTML_FILTERS, defaultPath });
 }
 
 /** Final path segment, handling both `/` and `\` separators. */
