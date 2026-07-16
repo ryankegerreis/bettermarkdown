@@ -30,6 +30,7 @@ function getStore(): Promise<Store> {
 
 interface SettingsState {
   autosave: boolean;
+  sidebarOpen: boolean;
   theme: ThemePreference;
   editor: EditorPreferences;
   recentFiles: string[];
@@ -38,6 +39,7 @@ interface SettingsState {
   /** Load persisted settings from disk (call once on startup). */
   hydrate(): Promise<void>;
   setAutosave(autosave: boolean): Promise<void>;
+  setSidebarOpen(sidebarOpen: boolean): Promise<void>;
   setTheme(theme: ThemePreference): Promise<void>;
   setEditor(editor: Partial<EditorPreferences>): Promise<void>;
   addRecent(path: string): Promise<void>;
@@ -46,6 +48,7 @@ interface SettingsState {
 
 export const useSettings = create<SettingsState>((set, get) => ({
   autosave: false,
+  sidebarOpen: true,
   theme: "system",
   editor: DEFAULT_EDITOR_PREFERENCES,
   recentFiles: [],
@@ -53,24 +56,44 @@ export const useSettings = create<SettingsState>((set, get) => ({
 
   async hydrate() {
     const store = await getStore();
-    const [storedAutosave, storedTheme, persistedEditor, storedRecentFiles] =
-      await Promise.all([
-        store.get<boolean>("autosave"),
-        store.get<ThemePreference>("theme"),
-        store.get<Partial<EditorPreferences>>("editor"),
-        store.get<string[]>("recentFiles"),
-      ]);
+    const [
+      storedAutosave,
+      storedSidebarOpen,
+      storedTheme,
+      persistedEditor,
+      storedRecentFiles,
+    ] = await Promise.all([
+      store.get<boolean>("autosave"),
+      store.get<boolean>("sidebarOpen"),
+      store.get<ThemePreference>("theme"),
+      store.get<Partial<EditorPreferences>>("editor"),
+      store.get<string[]>("recentFiles"),
+    ]);
     const autosave = storedAutosave ?? false;
+    const sidebarOpen = storedSidebarOpen ?? true;
     const theme = storedTheme ?? ("system" as const);
     const editor = { ...DEFAULT_EDITOR_PREFERENCES, ...persistedEditor };
     const recentFiles = storedRecentFiles ?? [];
-    set({ autosave, theme, editor, recentFiles, hydrated: true });
+    set({
+      autosave,
+      sidebarOpen,
+      theme,
+      editor,
+      recentFiles,
+      hydrated: true,
+    });
   },
 
   async setAutosave(autosave) {
     set({ autosave });
     const store = await getStore();
     await store.set("autosave", autosave);
+  },
+
+  async setSidebarOpen(sidebarOpen) {
+    set({ sidebarOpen });
+    const store = await getStore();
+    await store.set("sidebarOpen", sidebarOpen);
   },
 
   async setTheme(theme) {

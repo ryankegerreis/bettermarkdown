@@ -37,6 +37,7 @@ class LivePreviewView {
       update.docChanged ||
       update.viewportChanged ||
       update.selectionSet ||
+      update.focusChanged ||
       pathChanged
     ) {
       this.decorations = buildDecorations(

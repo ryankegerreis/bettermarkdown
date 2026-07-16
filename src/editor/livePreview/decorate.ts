@@ -19,6 +19,10 @@ function nodeChildren(node: SyntaxNodeRef, name: string) {
   return node.node.getChildren(name);
 }
 
+function syntaxIsRevealed(view: EditorView, from: number, to: number) {
+  return view.hasFocus && selectionTouches(view.state, from, to);
+}
+
 function addLines(
   view: EditorView,
   ranges: Range<Decoration>[],
@@ -60,7 +64,7 @@ function emphasis(
   const first = markers[0];
   const last = markers[markers.length - 1];
   ranges.push(Decoration.mark({ class: className }).range(first.to, last.from));
-  if (!selectionTouches(view.state, node.from, node.to)) {
+  if (!syntaxIsRevealed(view, node.from, node.to)) {
     for (const marker of markers) {
       ranges.push(Decoration.replace({}).range(marker.from, marker.to));
     }
@@ -84,7 +88,7 @@ function link(
       attributes: { "data-href": href },
     }).range(labelFrom, labelTo),
   );
-  if (!selectionTouches(view.state, node.from, node.to)) {
+  if (!syntaxIsRevealed(view, node.from, node.to)) {
     ranges.push(Decoration.replace({}).range(node.from, labelFrom));
     ranges.push(Decoration.replace({}).range(labelTo, node.to));
   }
@@ -96,7 +100,7 @@ function image(
   ranges: Range<Decoration>[],
   filePath: string,
 ) {
-  if (selectionTouches(view.state, node.from, node.to)) return;
+  if (syntaxIsRevealed(view, node.from, node.to)) return;
   const marks = nodeChildren(node, "LinkMark");
   const url = node.node.getChild("URL");
   if (marks.length < 4 || !url) return;
@@ -124,7 +128,7 @@ export function buildDecorations(
       enter(node) {
         // Selection checks are done per-branch so the many nodes we never
         // decorate (paragraphs, text, …) skip them entirely.
-        const revealed = () => selectionTouches(view.state, node.from, node.to);
+        const revealed = () => syntaxIsRevealed(view, node.from, node.to);
 
         if (node.name.startsWith("ATXHeading")) {
           const level = node.name[node.name.length - 1];
@@ -220,7 +224,7 @@ export function buildDecorations(
           case "TaskMarker": {
             const task = node.node.parent;
             const taskRevealed = task
-              ? selectionTouches(view.state, task.from, task.to)
+              ? syntaxIsRevealed(view, task.from, task.to)
               : revealed();
             if (!taskRevealed) {
               const checked = /x/i.test(

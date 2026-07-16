@@ -9,6 +9,7 @@ import type {
   EditorStatus,
 } from "@/editor/Editor";
 import { Toolbar } from "@/components/Toolbar";
+import { FormatSidebar } from "@/components/FormatSidebar";
 import { EmptyState } from "@/components/EmptyState";
 import { ExternalChangeBar } from "@/components/ExternalChangeBar";
 import { Toaster } from "@/components/ui/sonner";
@@ -76,6 +77,7 @@ function App() {
   const path = useFile((s) => s.path);
   const externalChanged = useFile((s) => s.externalChanged);
   const autosave = useSettings((s) => s.autosave);
+  const sidebarOpen = useSettings((s) => s.sidebarOpen);
   const theme = useSettings((s) => s.theme);
   const editorPreferences = useSettings((s) => s.editor);
   const recentFiles = useSettings((s) => s.recentFiles);
@@ -343,6 +345,14 @@ function App() {
   });
 
   function runCommand(id: string) {
+    const formatAction = commandDefinitions.find(
+      (definition) => definition.id === id,
+    )?.formatAction;
+    if (formatAction) {
+      editorRef.current?.applyFormat(formatAction);
+      return;
+    }
+
     switch (id) {
       case "file.new":
         runGuarded(() => void newFile());
@@ -368,17 +378,10 @@ function App() {
       case "edit.search":
         editorRef.current?.openSearch();
         break;
-      case "edit.bold":
-        editorRef.current?.toggleBold();
-        break;
-      case "edit.italic":
-        editorRef.current?.toggleItalic();
-        break;
-      case "edit.code":
-        editorRef.current?.toggleInlineCode();
-        break;
-      case "edit.link":
-        editorRef.current?.toggleLink();
+      case "view.toggleSidebar":
+        void useSettings
+          .getState()
+          .setSidebarOpen(!useSettings.getState().sidebarOpen);
         break;
       case "view.settings":
         setSettingsOpen(true);
@@ -546,11 +549,15 @@ function App() {
           fileName={fileName}
           dirty={dirty}
           autosave={autosave}
+          sidebarOpen={sidebarOpen}
           onNew={() => runGuarded(() => void newFile())}
           onOpen={() => runGuarded(() => void openViaDialog())}
           onSave={() => void save()}
           onToggleAutosave={() =>
             void useSettings.getState().setAutosave(!autosave)
+          }
+          onToggleSidebar={() =>
+            void useSettings.getState().setSidebarOpen(!sidebarOpen)
           }
           onOpenCommands={() => setCommandsOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
@@ -572,17 +579,24 @@ function App() {
 
       <div className="relative min-h-0 flex-1">
         {active && (
-          <div className="absolute inset-0">
-            <Suspense fallback={null}>
-              <Editor
-                ref={editorRef}
-                initialContent={editorSeed}
-                filePath={path}
-                onDirtyChange={handleDirtyChange}
-                preferences={editorPreferences}
-                onStatusChange={setEditorStatus}
+          <div className="absolute inset-0 flex">
+            <div className="min-w-0 flex-1">
+              <Suspense fallback={null}>
+                <Editor
+                  ref={editorRef}
+                  initialContent={editorSeed}
+                  filePath={path}
+                  onDirtyChange={handleDirtyChange}
+                  preferences={editorPreferences}
+                  onStatusChange={setEditorStatus}
+                />
+              </Suspense>
+            </div>
+            {sidebarOpen && (
+              <FormatSidebar
+                onFormat={(action) => editorRef.current?.applyFormat(action)}
               />
-            </Suspense>
+            )}
           </div>
         )}
         {!active && (

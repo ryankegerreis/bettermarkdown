@@ -10,7 +10,16 @@ import { EditorView } from "@codemirror/view";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { livePreview, markdownFilePath } from ".";
-import { toggleBold, toggleLink } from "./commands";
+import {
+  insertImage,
+  insertTable,
+  toggleBlockquote,
+  toggleBold,
+  toggleBulletList,
+  toggleHeading,
+  toggleLink,
+  toggleTaskList,
+} from "./commands";
 import { selectionTouches } from "./reveal";
 
 const views: EditorView[] = [];
@@ -29,6 +38,7 @@ function createView(doc: string, anchor = doc.length): EditorView {
     }),
   });
   views.push(view);
+  view.focus();
   return view;
 }
 
@@ -71,6 +81,25 @@ describe("live preview decorations", () => {
     expect(
       view.dom.querySelector<HTMLElement>(".cm-live-h1")?.textContent,
     ).toBe("# Heading");
+  });
+
+  it("hides syntax from a stale document selection after editor focus leaves", async () => {
+    const view = createView("# Heading\n\n> Quote\n\n- item");
+    view.focus();
+    view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
+    expect(
+      view.dom.querySelector<HTMLElement>(".cm-live-h1")?.textContent,
+    ).toBe("# Heading");
+
+    const outside = document.createElement("button");
+    document.body.append(outside);
+    outside.focus();
+    await new Promise((resolve) => window.setTimeout(resolve, 30));
+
+    expect(
+      view.dom.querySelector<HTMLElement>(".cm-live-h1")?.textContent,
+    ).toBe("Heading");
+    expect(view.dom.querySelector(".cm-live-bullet")).not.toBeNull();
   });
 
   it("toggles the underlying task marker from its checkbox widget", () => {
@@ -134,6 +163,71 @@ describe("formatting commands", () => {
         view.state.selection.main.to,
       ),
     ).toBe("this");
+  });
+
+  it("switches heading levels and toggles the active level off", () => {
+    const view = createView("## First\n## Second");
+    view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
+
+    toggleHeading(3)(view);
+    expect(view.state.doc.toString()).toBe("### First\n### Second");
+
+    toggleHeading(3)(view);
+    expect(view.state.doc.toString()).toBe("First\nSecond");
+  });
+
+  it("toggles multi-line lists and converts list types", () => {
+    const view = createView("First\nSecond");
+    view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
+
+    toggleBulletList(view);
+    expect(view.state.doc.toString()).toBe("- First\n- Second");
+
+    toggleTaskList(view);
+    expect(view.state.doc.toString()).toBe("- [ ] First\n- [ ] Second");
+
+    toggleTaskList(view);
+    expect(view.state.doc.toString()).toBe("First\nSecond");
+  });
+
+  it("toggles blockquotes across every selected line", () => {
+    const view = createView("First\nSecond");
+    view.dispatch({ selection: { anchor: 0, head: view.state.doc.length } });
+
+    toggleBlockquote(view);
+    expect(view.state.doc.toString()).toBe("> First\n> Second");
+
+    toggleBlockquote(view);
+    expect(view.state.doc.toString()).toBe("First\nSecond");
+  });
+
+  it("inserts the requested table shape and selects its first header", () => {
+    const view = createView("");
+    insertTable(view, 3, 2);
+
+    expect(view.state.doc.toString()).toBe(
+      "| Header 1 | Header 2 |\n| --- | --- |\n|  |  |\n|  |  |",
+    );
+    expect(
+      view.state.sliceDoc(
+        view.state.selection.main.from,
+        view.state.selection.main.to,
+      ),
+    ).toBe("Header 1");
+  });
+
+  it("inserts an image and selects its URL placeholder", () => {
+    const view = createView("A portrait");
+    view.dispatch({ selection: { anchor: 2, head: 10 } });
+    insertImage(view);
+
+    expect(view.state.doc.toString()).toBe("A ![portrait](url)");
+    expect(
+      view.state.sliceDoc(
+        view.state.selection.main.from,
+        view.state.selection.main.to,
+      ),
+    ).toBe("url");
   });
 });
 

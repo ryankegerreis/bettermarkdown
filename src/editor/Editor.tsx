@@ -16,12 +16,7 @@ import { openSearchPanel } from "@codemirror/search";
 
 import { baseExtensions } from "./extensions";
 import { markdownFilePath } from "./livePreview";
-import {
-  toggleBold,
-  toggleInlineCode,
-  toggleItalic,
-  toggleLink,
-} from "./livePreview/commands";
+import { applyFormatAction, type FormatAction } from "./livePreview/commands";
 import { editorAppearance } from "./theme";
 import { countWords, updatedWordCount } from "./metrics";
 import type { EditorPreferences } from "@/store/settings";
@@ -48,10 +43,7 @@ export interface EditorHandle {
   setContent(content: string): void;
   focus(): void;
   openSearch(): void;
-  toggleBold(): void;
-  toggleItalic(): void;
-  toggleInlineCode(): void;
-  toggleLink(): void;
+  applyFormat(action: FormatAction): void;
 }
 
 interface EditorProps {
@@ -207,21 +199,11 @@ export const Editor = forwardRef<EditorHandle, EditorProps>(function Editor(
         const view = viewRef.current;
         if (view) openSearchPanel(view);
       },
-      toggleBold: () => {
+      applyFormat: (action) => {
         const view = viewRef.current;
-        if (view) toggleBold(view);
-      },
-      toggleItalic: () => {
-        const view = viewRef.current;
-        if (view) toggleItalic(view);
-      },
-      toggleInlineCode: () => {
-        const view = viewRef.current;
-        if (view) toggleInlineCode(view);
-      },
-      toggleLink: () => {
-        const view = viewRef.current;
-        if (view) toggleLink(view);
+        if (!view) return;
+        applyFormatAction(view, action);
+        view.focus();
       },
     }),
     [makeExtensions, reportStatus],

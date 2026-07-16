@@ -5,15 +5,29 @@ import {
   Download,
   FilePlus2,
   FolderOpen,
+  Heading1,
+  Heading2,
+  Heading3,
+  Image,
   Italic,
   Link,
+  List,
+  ListChecks,
+  ListOrdered,
+  Minus,
+  PanelRight,
   Printer,
   RefreshCw,
   Save,
   SaveAll,
   Search,
   Settings,
+  SquareCode,
+  Strikethrough,
+  Table2,
+  TextQuote,
 } from "lucide-react";
+import type { FormatAction } from "@/editor/livePreview/commands";
 
 export interface AppCommand {
   id: string;
@@ -28,6 +42,7 @@ export interface AppCommand {
 
 export type CommandDefinition = Omit<AppCommand, "run" | "enabled"> & {
   requiresEditor?: boolean;
+  formatAction?: FormatAction;
 };
 
 export const commandDefinitions: CommandDefinition[] = [
@@ -98,6 +113,7 @@ export const commandDefinitions: CommandDefinition[] = [
     keys: "⌘B",
     icon: Bold,
     requiresEditor: true,
+    formatAction: { kind: "bold" },
   },
   {
     id: "edit.italic",
@@ -107,6 +123,7 @@ export const commandDefinitions: CommandDefinition[] = [
     keys: "⌘I",
     icon: Italic,
     requiresEditor: true,
+    formatAction: { kind: "italic" },
   },
   {
     id: "edit.code",
@@ -116,6 +133,7 @@ export const commandDefinitions: CommandDefinition[] = [
     keys: "⌘E",
     icon: Code2,
     requiresEditor: true,
+    formatAction: { kind: "inlineCode" },
   },
   {
     id: "edit.link",
@@ -125,12 +143,118 @@ export const commandDefinitions: CommandDefinition[] = [
     keys: "⌘K",
     icon: Link,
     requiresEditor: true,
+    formatAction: { kind: "link" },
+  },
+  {
+    id: "edit.heading1",
+    title: "Toggle heading 1",
+    section: "Edit",
+    icon: Heading1,
+    requiresEditor: true,
+    formatAction: { kind: "heading", level: 1 },
+  },
+  {
+    id: "edit.heading2",
+    title: "Toggle heading 2",
+    section: "Edit",
+    icon: Heading2,
+    requiresEditor: true,
+    formatAction: { kind: "heading", level: 2 },
+  },
+  {
+    id: "edit.heading3",
+    title: "Toggle heading 3",
+    section: "Edit",
+    icon: Heading3,
+    requiresEditor: true,
+    formatAction: { kind: "heading", level: 3 },
+  },
+  {
+    id: "edit.strikethrough",
+    title: "Toggle strikethrough",
+    section: "Edit",
+    icon: Strikethrough,
+    requiresEditor: true,
+    formatAction: { kind: "strikethrough" },
+  },
+  {
+    id: "edit.bulletList",
+    title: "Toggle bullet list",
+    section: "Edit",
+    icon: List,
+    requiresEditor: true,
+    formatAction: { kind: "bulletList" },
+  },
+  {
+    id: "edit.numberedList",
+    title: "Toggle numbered list",
+    section: "Edit",
+    icon: ListOrdered,
+    requiresEditor: true,
+    formatAction: { kind: "numberedList" },
+  },
+  {
+    id: "edit.taskList",
+    title: "Toggle task list",
+    section: "Edit",
+    icon: ListChecks,
+    requiresEditor: true,
+    formatAction: { kind: "taskList" },
+  },
+  {
+    id: "edit.blockquote",
+    title: "Toggle blockquote",
+    section: "Edit",
+    icon: TextQuote,
+    requiresEditor: true,
+    formatAction: { kind: "blockquote" },
+  },
+  {
+    id: "edit.codeBlock",
+    title: "Insert code block",
+    section: "Edit",
+    icon: SquareCode,
+    requiresEditor: true,
+    formatAction: { kind: "codeBlock" },
+  },
+  {
+    id: "edit.horizontalRule",
+    title: "Insert horizontal rule",
+    section: "Edit",
+    icon: Minus,
+    requiresEditor: true,
+    formatAction: { kind: "horizontalRule" },
+  },
+  {
+    id: "edit.image",
+    title: "Insert image",
+    section: "Edit",
+    icon: Image,
+    requiresEditor: true,
+    formatAction: { kind: "image" },
+  },
+  {
+    id: "edit.table",
+    title: "Insert 3 × 3 table",
+    section: "Edit",
+    icon: Table2,
+    requiresEditor: true,
+    formatAction: { kind: "table", rows: 3, cols: 3 },
   },
   {
     id: "app.checkUpdates",
     title: "Check for updates…",
     section: "View",
     icon: RefreshCw,
+  },
+  {
+    id: "view.toggleSidebar",
+    title: "Toggle formatting sidebar",
+    section: "View",
+    shortcut: "mod+shift+b",
+    keys: "⇧⌘B",
+    icon: PanelRight,
+    requiresEditor: true,
   },
   {
     id: "view.settings",

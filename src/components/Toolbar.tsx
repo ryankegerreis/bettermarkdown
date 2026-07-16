@@ -1,4 +1,11 @@
-import { Command, FilePlus2, FolderOpen, Save, Settings } from "lucide-react";
+import {
+  Command,
+  FilePlus2,
+  FolderOpen,
+  PanelRight,
+  Save,
+  Settings,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -6,10 +13,12 @@ interface ToolbarProps {
   fileName: string;
   dirty: boolean;
   autosave: boolean;
+  sidebarOpen: boolean;
   onNew: () => void;
   onOpen: () => void;
   onSave: () => void;
   onToggleAutosave: () => void;
+  onToggleSidebar: () => void;
   onOpenCommands: () => void;
   onOpenSettings: () => void;
 }
@@ -19,10 +28,12 @@ export function Toolbar({
   fileName,
   dirty,
   autosave,
+  sidebarOpen,
   onNew,
   onOpen,
   onSave,
   onToggleAutosave,
+  onToggleSidebar,
   onOpenCommands,
   onOpenSettings,
 }: ToolbarProps) {
@@ -63,6 +74,15 @@ export function Toolbar({
       >
         Autosave {autosave ? "on" : "off"}
       </button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={onToggleSidebar}
+        aria-pressed={sidebarOpen}
+        title="Formatting sidebar (⌘⇧B)"
+      >
+        <PanelRight className="size-3.5" />
+      </Button>
       <Button
         variant="ghost"
         size="icon-sm"
